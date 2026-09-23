@@ -1,0 +1,142 @@
+import React, { useState } from 'react';
+import { apiCall } from '../api/client';
+import logoIcon from '../assets/icon.png';
+import { toast } from 'react-hot-toast';
+
+const IconBolt = (props) => (
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" {...props}>
+    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" />
+  </svg>
+);
+
+export default function Login({ onLoginSuccess }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // 2. Add a new state to track the visual success delay
+  const [loginSuccess, setLoginSuccess] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const data = await apiCall('/auth/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+    setSubmitting(false);
+
+    if (data.success) {
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      // 3. Trigger the visual success state
+      setLoginSuccess(true);
+
+      // 4. Fire the welcome toast notification
+      toast.success(`Welcome back, ${data.admin?.username || 'Admin'}!`, {
+        icon: '👋',
+        style: {
+          borderRadius: '8px',
+          background: '#fff',
+          color: '#333',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)' // Adds a nice soft shadow
+        },
+      });
+
+      // 5. Pause for 800ms so the user can see the green success button
+      setTimeout(() => {
+        onLoginSuccess(data.admin);
+      }, 800);
+
+    } else {
+      // Bonus: Replace the ugly browser alert with a clean error toast!
+      toast.error(data.message || 'Invalid credentials');
+    }
+  };
+
+  // Dynamic button styling for the success state
+  const buttonStyle = loginSuccess
+    ? { backgroundColor: '#34c38f', borderColor: '#34c38f', color: '#fff' }
+    : {};
+
+  return (
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <div className="auth-banner">
+          <h2>Welcome back!</h2>
+          <p>Sign in to EMS to continue</p>
+        </div>
+        <div className="auth-logo">
+          <img
+            src={logoIcon}
+            alt="EMS Logo"
+            style={{ width: 50, height: 50, objectFit: 'contain' }}
+          />
+        </div>
+
+        <form onSubmit={handleSubmit} className="auth-form" autoComplete="off">
+          <div className="form-group">
+            <label className="form-label">Username</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Enter your username"
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              required
+              disabled={loginSuccess} // Lock input during success delay
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="form-control"
+                placeholder="Enter your password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                disabled={loginSuccess}
+              />
+              <button
+                type="button"
+                className={`password-toggle-btn ${showPassword ? 'active' : ''}`}
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex="-1" // Prevents the tab key from focusing the icon instead of the submit button
+                disabled={loginSuccess}
+                title={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  // Eye-off icon (Hidden)
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                ) : (
+                  // Eye icon (Visible)
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={submitting || loginSuccess}
+            style={buttonStyle}
+          >
+            {loginSuccess ? '✅ Login Successful!' : submitting ? 'Signing in…' : 'Sign In'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

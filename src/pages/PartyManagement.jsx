@@ -1,0 +1,335 @@
+import React, { useState, useEffect } from 'react';
+import { apiCall } from '../api/client';
+import CustomSelect from '../components/CustomSelect';
+import { toast } from 'react-hot-toast';
+
+
+const EditIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const DeleteIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6" />
+    <path d="M14 11v6" />
+    <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+const actionIconStyle = (variant) => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 32,
+  height: 32,
+  borderRadius: 6,
+  border: '1px solid ' + (variant === 'danger' ? '#f46a6a' : '#556ee6'),
+  background: '#fff',
+  color: variant === 'danger' ? '#f46a6a' : '#556ee6',
+  cursor: 'pointer',
+});
+
+const SORT_OPTIONS = [
+  { value: 'party_name-asc', label: 'Party (A–Z)' },
+  { value: 'party_name-desc', label: 'Party (Z–A)' },
+  { value: 'party_code-asc', label: 'Code (A–Z)' },
+  { value: 'party_code-desc', label: 'Code (Z–A)' },
+];
+
+export default function PartyManagement() {
+  const [parties, setParties] = useState([]);
+  const [formData, setFormData] = useState({ party_name: '', party_code: '', party_icon_url: '' });
+  const [iconFile, setIconFile] = useState(null); // State for direct file upload
+  const [editingId, setEditingId] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [imageErrors, setImageErrors] = useState({}); // Track broken image links
+  const [fileInputKey, setFileInputKey] = useState(0); // Bump to force the file input to visually clear
+
+  const [sortKey, setSortKey] = useState('party_name-asc');
+
+  const [loading, setLoading] = useState(true);
+
+  const [deletingParty, setDeletingParty] = useState(null);
+
+  const fetchParties = async () => {
+    try {
+      const data = await apiCall('/parties/all');
+      if (data.success) setParties(data.parties);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchParties(); }, []);
+
+  const [sortField, sortDir] = sortKey.split('-');
+  const sortedParties = [...parties].sort((a, b) => {
+    const cmp = (a[sortField] || '').localeCompare(b[sortField] || '');
+    return sortDir === 'desc' ? -cmp : cmp;
+  });
+
+  const resetForm = () => {
+    setEditingId(null);
+    setFormData({ party_name: '', party_code: '', party_icon_url: '' });
+    setIconFile(null);
+    setFileInputKey(k => k + 1);
+  };
+
+  const handleCloseModal = () => {
+    resetForm();
+    setIsCreateModalOpen(false);
+  };
+
+  const handleImageError = (id) => {
+    setImageErrors(prev => ({ ...prev, [id]: true }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    const payload = new FormData();
+    payload.append('party_name', formData.party_name);
+    payload.append('party_code', formData.party_code);
+    payload.append('party_icon_url', formData.party_icon_url);
+    if (iconFile) {
+      payload.append('icon_file', iconFile);
+    }
+
+    let res;
+    if (editingId) {
+      res = await apiCall(`/parties/${editingId}`, { method: 'PUT', body: payload });
+    } else {
+      res = await apiCall('/parties/add', { method: 'POST', body: payload });
+    }
+
+    setSubmitting(false);
+
+    if (res.success) {
+      toast.success(editingId ? 'Political party updated successfully!' : 'Political party added successfully!');
+      resetForm();
+      setIsCreateModalOpen(false);
+      fetchParties();
+    } else {
+      toast.error(res.message || 'Failed to save political party.');
+    }
+  };
+
+  const handleEdit = (p) => {
+    setEditingId(p.id);
+    setFormData({ party_name: p.party_name, party_code: p.party_code, party_icon_url: p.party_icon_url || '' });
+    setIconFile(null);
+    setFileInputKey(k => k + 1);
+    setIsCreateModalOpen(true);
+  };
+
+  // 1. Opens the modal and sets the target party
+  const handleDelete = (party) => {
+    setDeletingParty(party);
+  };
+
+  // 2. Fires when the user clicks "Confirm" inside the modal
+  const confirmDelete = async () => {
+    if (!deletingParty) return;
+
+    const res = await apiCall(`/parties/${deletingParty.id}`, { method: 'DELETE' });
+    if (res.success) {
+      toast.success('Political party deleted successfully!');
+      fetchParties();
+    } else {
+      toast.error(res.message || 'Failed to delete party.');
+    }
+    setDeletingParty(null);
+  };
+
+  return (
+    <div>
+
+      <div className="card">
+        <div className="card-header responsive-header">
+          <div className="header-title-group">
+            <h2>Political Parties</h2>
+            <span className="muted">{parties.length} total</span>
+          </div>
+          <div className="header-controls-group">
+            <div className="sort-filter-actions">
+              <span className="sort-label-text">
+                Sort by
+              </span>
+              <CustomSelect
+                className="sort-select-responsive"
+                value={sortKey}
+                options={SORT_OPTIONS}
+                onChange={e => setSortKey(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn btn-primary btn-add-entity"
+                onClick={() => { resetForm(); setIsCreateModalOpen(true); }}
+              >
+                <PlusIcon />
+                <span>Add Party</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Party Name</th>
+                <th>Code</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                // Render 4 skeleton rows while fetching
+                [...Array(4)].map((_, i) => (
+                  <tr key={`skeleton-${i}`}>
+                    <td><div className="skeleton-circle" style={{ width: 32, height: 32 }} /></td>
+                    <td><div className="skeleton-box" style={{ width: 120, height: 16 }} /></td>
+                    <td><div className="skeleton-box" style={{ width: 60, height: 20, borderRadius: 12 }} /></td>
+                    <td>
+                      <div style={{ display: 'flex' }}>
+                        <div className="skeleton-box" style={{ width: 32, height: 32, borderRadius: 6, marginRight: 8 }} />
+                        <div className="skeleton-box" style={{ width: 32, height: 32, borderRadius: 6 }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                sortedParties.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      {p.party_icon_url && !imageErrors[p.id] ? (
+                        <img
+                          src={p.party_icon_url}
+                          alt=""
+                          className="avatar-xs"
+                          onError={() => handleImageError(p.id)}
+                        />
+                      ) : (
+                        <span className="avatar-title">{p.party_name?.charAt(0)}</span>
+                      )}
+                    </td>
+                    <td><strong>{p.party_name}</strong></td>
+                    <td><span className="badge badge-soft-secondary">{p.party_code}</span></td>
+                    <td>
+                      <button className="btn-icon" style={{ ...actionIconStyle('primary'), marginRight: 8 }} title="Edit" aria-label="Edit party" onClick={() => handleEdit(p)}>
+                        <EditIcon />
+                      </button>
+                      <button className="btn-icon" style={actionIconStyle('danger')} title="Delete" aria-label="Delete party" onClick={() => handleDelete(p)}>
+                        <DeleteIcon />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+              {!loading && parties.length === 0 && (
+                <tr><td colSpan={4} className="empty-state">No parties registered yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* FEATURE: Custom Delete Confirmation Modal */}
+      {deletingParty && (
+        <div className="modal-overlay" onClick={() => setDeletingParty(null)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Confirm Deletion</h3>
+              <button className="modal-close" onClick={() => setDeletingParty(null)}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete <strong>{deletingParty.party_name} ({deletingParty.party_code})</strong>?</p>
+              <p className="muted" style={{ fontSize: '13px', marginTop: '8px' }}>
+                This action cannot be undone. <strong>All associated candidates will also be permanently removed.</strong>
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setDeletingParty(null)}>Cancel</button>
+              <button type="button" className="btn btn-primary" style={{ backgroundColor: '#f46a6a', borderColor: '#f46a6a' }} onClick={confirmDelete}>
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FEATURE: Floating Party Create/Edit Modal */}
+      {isCreateModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
+          <div className="admin-edit-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="admin-edit-modal-header">
+              <div>
+                <h3 className="admin-edit-modal-title">{editingId ? 'Edit Political Party' : 'Add Political Party'}</h3>
+                <p className="admin-edit-modal-subtitle">{editingId ? 'Update party credentials and symbol' : 'Register a new political party'}</p>
+              </div>
+              <button className="modal-close" onClick={handleCloseModal}>&times;</button>
+            </div>
+            <form onSubmit={handleSubmit} className="admin-edit-modal-form">
+              <div className="admin-edit-modal-body">
+                <div className="form-group admin-modal-form-group">
+                  <label className="form-label">Party Name</label>
+                  <input
+                    type="text" required className="form-control"
+                    value={formData.party_name}
+                    onChange={e => setFormData({ ...formData, party_name: e.target.value })}
+                  />
+                </div>
+                <div className="form-group admin-modal-form-group">
+                  <label className="form-label">Party Code / Abbreviation (e.g. APC)</label>
+                  <input
+                    type="text" required className="form-control"
+                    value={formData.party_code}
+                    onChange={e => setFormData({ ...formData, party_code: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group admin-modal-form-group">
+                  <label className="form-label">Upload Party Image from device</label>
+                  <input
+                    key={fileInputKey}
+                    type="file" accept="image/*" className="form-control"
+                    onChange={e => setIconFile(e.target.files[0] || null)}
+                  />
+                  {iconFile && (
+                    <div className="file-preview">
+                      <img src={URL.createObjectURL(iconFile)} alt="" />
+                      <span>{iconFile.name}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="admin-edit-modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={submitting}>
+                  {submitting ? 'Saving…' : editingId ? 'Update' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

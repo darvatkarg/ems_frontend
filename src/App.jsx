@@ -1,0 +1,159 @@
+import React, { useState, useEffect } from 'react';
+import './App.css';
+import Sidebar from './components/Sidebar';
+import Topbar from './components/Topbar';
+import LiveAnalytics from './pages/LiveAnalytics';
+import PartyManagement from './pages/PartyManagement';
+import CandidateManagement from './pages/CandidateManagement';
+import LocationManagement from './pages/LocationManagement';
+import OperatorManagement from './pages/OperatorManagement';
+import AuditSubmissions from './pages/AuditSubmissions';
+import AdminManagement from './pages/AdminManagement';
+import Login from './pages/Login';
+import { Toaster, toast } from 'react-hot-toast';
+import WardReport from './pages/WardReport';
+import WardManagement from './pages/WardManagement';
+import { isTokenValid } from './utils/authUtils';
+
+const MOBILE_BREAKPOINT = 780; // keep in sync with the @media max-width in App.css
+
+export default function App() {
+  // Initialize state directly from localStorage after validating token validity and expiration
+  const [admin, setAdmin] = useState(() => {
+    try {
+      const savedAdmin = localStorage.getItem('ems_admin_user');
+      const savedToken = localStorage.getItem('token');
+      if (savedAdmin && savedToken && isTokenValid(savedToken)) {
+        return JSON.parse(savedAdmin);
+      }
+      // If token exists but is expired or invalid, purge stale credentials
+      if (savedToken && !isTokenValid(savedToken)) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('ems_admin_user');
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('ems_active_tab') || 'analytics';
+  });
+
+  // Desktop (>780px): shrinks the sidebar to an icon-only rail.
+  const [collapsed, setCollapsed] = useState(false);
+  // Mobile/tablet (<=780px): sidebar is off-canvas; this opens/closes it as a drawer.
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Sync active tab to localStorage whenever it changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('ems_active_tab', tab);
+    setMobileOpen(false); // auto-close the drawer after navigating on mobile
+  };
+
+  // One toggle button, two behaviors depending on viewport — this is what
+  // was missing before: the button always called setCollapsed, but on
+  // mobile the collapsed state was visually meaningless because CSS forced
+  // the sidebar to the same 72px width either way.
+  const handleToggleSidebar = () => {
+    if (window.innerWidth <= MOBILE_BREAKPOINT) {
+      setMobileOpen((o) => !o);
+    } else {
+      setCollapsed((c) => !c);
+    }
+  };
+
+  // If the window is resized past the breakpoint while the mobile drawer is
+  // open, close it so it doesn't get stuck open once desktop layout kicks in.
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > MOBILE_BREAKPOINT) setMobileOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Listen for global session expiration events dispatched by apiCall
+  useEffect(() => {
+    const handleSessionExpired = (e) => {
+      setAdmin(null);
+      toast.error(e.detail?.message || 'Your session has expired. Please log in again.', {
+        id: 'session-expired-toast', // Prevents duplicate toasts when multiple concurrent requests fail
+        duration: 4000,
+      });
+    };
+
+    window.addEventListener('ems:session-expired', handleSessionExpired);
+    return () => window.removeEventListener('ems:session-expired', handleSessionExpired);
+  }, []);
+
+  const handleLoginSuccess = (adminData) => {
+    setAdmin(adminData);
+    localStorage.setItem('ems_admin_user', JSON.stringify(adminData));
+  };
+
+  const handleUpdateAdmin = (updatedAdmin) => {
+    const merged = { ...admin, ...updatedAdmin };
+    setAdmin(merged);
+    localStorage.setItem('ems_admin_user', JSON.stringify(merged));
+  };
+
+  const handleLogout = () => {
+    setAdmin(null);
+    localStorage.removeItem('ems_admin_user');
+    localStorage.removeItem('ems_active_tab');
+    localStorage.removeItem('token');
+  };
+
+  if (!admin) {
+    return (
+      <>
+        <Toaster
+          position="top-right"
+          toastOptions={{ duration: 3000 }}
+        />
+        <Login onLoginSuccess={handleLoginSuccess} />
+      </>
+    );
+  }
+
+  return (
+    <div className={`app-wrapper ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+      <Toaster
+        position="top-right"
+        toastOptions={{ duration: 3000 }}
+      />
+
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
+      <Topbar
+        admin={admin}
+        collapsed={collapsed}
+        mobileOpen={mobileOpen}
+        onToggleSidebar={handleToggleSidebar}
+        onLogout={handleLogout}
+        onUpdateAdmin={handleUpdateAdmin}
+      />
+
+      <div className="app-main">
+        <div className="page-content">
+          {activeTab === 'analytics' && <LiveAnalytics />}
+          {activeTab === 'parties' && <PartyManagement />}
+          {activeTab === 'candidates' && <CandidateManagement />}
+          {activeTab === 'wards' && <WardManagement />}
+          {activeTab === 'locations' && <LocationManagement />}
+          {activeTab === 'operators' && <OperatorManagement />}
+          {activeTab === 'audit' && <AuditSubmissions />}
+          {activeTab === 'admins' && <AdminManagement currentAdminRole={admin.role} />}
+          {activeTab === 'ward-reports' && <WardReport />}
+        </div>
+      </div>
+    </div>
+  );
+}

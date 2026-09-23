@@ -1,0 +1,191 @@
+import React from 'react';
+import logoIcon from '../assets/icon.png';
+
+const IconBolt = (props) => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" {...props}>
+    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" />
+  </svg>
+);
+
+const IconChart = (props) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M4 20V10M12 20V4M20 20v-7" />
+  </svg>
+);
+
+const IconPin = (props) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" />
+    <circle cx="12" cy="9.5" r="2.4" />
+  </svg>
+);
+
+const IconUsers = (props) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="9" cy="8" r="3.4" />
+    <path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+    <path d="M16 4.4c1.7.4 3 2 3 3.8s-1.3 3.4-3 3.8" />
+    <path d="M21.5 20c0-3-2-5.3-4.8-5.9" />
+  </svg>
+);
+
+const IconCamera = (props) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+    <circle cx="12" cy="13.5" r="3.5" />
+  </svg>
+);
+
+const IconReport = (props) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <line x1="10" y1="9" x2="8" y2="9" />
+  </svg>
+);
+
+const IconWard = (props) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21" />
+    <line x1="9" y1="3" x2="9" y2="18" />
+    <line x1="15" y1="6" x2="15" y2="21" />
+  </svg>
+);
+
+const IconParty = (props) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+    <line x1="4" y1="22" x2="4" y2="15" />
+  </svg>
+);
+
+const IconBooth = (props) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="m9 12 2 2 4-4" />
+    <path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z" />
+    <path d="M22 19H2" />
+  </svg>
+);
+
+const IconLandmark = (props) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M4 21h16" />
+    <path d="M5 21V10M9 21V10M15 21V10M19 21V10" />
+    <path d="M3 10 12 4l9 6" />
+  </svg>
+);
+
+const IconUser = (props) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <circle cx="12" cy="8" r="3.6" />
+    <path d="M4.5 20c0-4 3.4-6.8 7.5-6.8s7.5 2.8 7.5 6.8" />
+  </svg>
+);
+
+const IconShield = (props) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M12 3 5 6v6c0 4.4 3 7.7 7 9 4-1.3 7-4.6 7-9V6l-7-3Z" />
+    <path d="m9.5 12 2 2 3.5-3.5" />
+  </svg>
+);
+
+const NAV_ITEMS = [
+  { key: 'analytics', label: 'Dashboard', Icon: IconChart },
+  { key: 'audit', label: 'Polling Unit Report', Icon: IconReport },
+  { key: 'ward-reports', label: 'Ward Report', Icon: IconReport },
+
+  { key: 'operators', label: 'Polling Officers', Icon: IconUsers },
+
+  { key: 'candidates', label: 'Ballot List', Icon: IconUser },
+
+  { key: 'wards', label: 'Ward Management', Icon: IconWard },
+
+  { key: 'locations', label: 'Polling Units', Icon: IconBooth },
+
+  { key: 'parties', label: 'Political Parties', Icon: IconParty },
+
+  { key: 'admins', label: 'Admin Users', Icon: IconShield },
+];
+
+export default function Sidebar({ activeTab, setActiveTab, mobileOpen, onCloseMobile }) {
+  return (
+    <>
+      {/* Only visible/interactive below the 780px breakpoint (see App.css);
+          tapping it closes the off-canvas drawer. */}
+      <div
+        className="sidebar-backdrop"
+        onClick={onCloseMobile}
+        aria-hidden={!mobileOpen}
+      />
+
+      <aside className="app-sidebar">
+        <div className="sidebar-brand">
+          <div className="sidebar-brand-mark">
+            <img
+              src={logoIcon}
+              alt="EMS Logo"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+            />
+          </div>
+          <span className="sidebar-brand-text">EMS</span>
+        </div>
+
+
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              className={`nav-link ${activeTab === key ? 'active' : ''}`}
+              onClick={() => setActiveTab(key)}
+            >
+              <Icon />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
+    </>
+  );
+}
