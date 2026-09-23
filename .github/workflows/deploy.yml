@@ -3,7 +3,7 @@ name: Deploy Frontend to MilesWeb
 on:
   push:
     branches:
-      - main # Or master
+      - main
 
 jobs:
   build-and-deploy:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Dependencies
@@ -25,14 +25,14 @@ jobs:
       - name: Build Production Bundle
         run: npm run build
 
-      - name: Deploy dist files to ems.spikedace.com
-        uses: easingthemes/ssh-deploy@v5.0.3
+      - name: Deploy dist via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          SSH_PRIVATE_KEY: ""
-          ARGS: "-rlgoDzvc -i --delete --exclude='.htaccess' --exclude='error_pages/' --exclude='dist.zip'"
-          SOURCE: "dist/"
-          REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          REMOTE_PORT: ${{ secrets.SSH_PORT }}
-          REMOTE_USER: ${{ secrets.SSH_USER }}
-          TARGET: "~/ems.spikedace.com"
-          PASSWORD: ${{ secrets.SSH_PASSWORD }}
+          server: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: ${{ secrets.SSH_PORT }}
+          protocol: sftp
+          local-dir: ./dist/
+          server-dir: ./ems.spikedace.com/
+          dangerous-clean-slate: false
