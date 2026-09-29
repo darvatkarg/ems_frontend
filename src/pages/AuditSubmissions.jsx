@@ -78,7 +78,7 @@ const iconBtnStyle = (active, disabled = false) => ({
   boxSizing: 'border-box',
 });
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 export default function BoothReport() {
   const [submissions, setSubmissions] = useState([]);
@@ -105,6 +105,7 @@ export default function BoothReport() {
   const [verifyingReport, setVerifyingReport] = useState(null);
   const [verifiedCounts, setVerifiedCounts] = useState({});
   const [verifying, setVerifying] = useState(false);
+  const [verifyPreviewTab, setVerifyPreviewTab] = useState(1);
 
   // Row export dropdown state
   const [openRowExportId, setOpenRowExportId] = useState(null);
@@ -157,6 +158,7 @@ export default function BoothReport() {
     });
 
     setVerifiedCounts(initialCounts);
+    setVerifyPreviewTab(1);
     setVerifyingReport({ ...report, votes_breakdown: breakdown });
   };
 
@@ -510,18 +512,39 @@ export default function BoothReport() {
                       )}
                     </td>
                     <td>
-                      {sub.tally_sheet_url || sub.video_url ? (
+                      {sub.tally_sheet_url || sub.tally_sheet_url_2 || sub.video_url ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {sub.tally_sheet_url && (
                             <button
                               type="button"
                               className="btn-icon"
                               style={actionIconStyle('primary')}
-                              title="View Photo"
-                              aria-label="View Photo"
+                              title="View Photo 1 (EC8A Front)"
+                              aria-label="View Photo 1"
                               onClick={() => setSelectedImage({
                                 url: sub.tally_sheet_url,
-                                booth: sub.unique_booth_code,
+                                booth: `${sub.unique_booth_code} (Photo 1)`,
+                                operator: sub.operator_name || 'Unassigned'
+                              })}
+                            >
+                              <IconImage />
+                            </button>
+                          )}
+                          {sub.tally_sheet_url_2 && (
+                            <button
+                              type="button"
+                              className="btn-icon"
+                              style={{
+                                ...actionIconStyle('primary'),
+                                backgroundColor: '#f0fdf4',
+                                color: '#16a34a',
+                                borderColor: '#bbf7d0'
+                              }}
+                              title="View Photo 2 (EC8A Back / Supplementary)"
+                              aria-label="View Photo 2"
+                              onClick={() => setSelectedImage({
+                                url: sub.tally_sheet_url_2,
+                                booth: `${sub.unique_booth_code} (Photo 2)`,
                                 operator: sub.operator_name || 'Unassigned'
                               })}
                             >
@@ -856,7 +879,7 @@ export default function BoothReport() {
               {/* LEFT SIDE: Media Preview or Grey Placeholder UI */}
               <div style={{
                 flex: 1,
-                backgroundColor: verifyingReport.tally_sheet_url ? '#0f172a' : '#f8f9fa',
+                backgroundColor: (verifyingReport.tally_sheet_url || verifyingReport.tally_sheet_url_2) ? '#0f172a' : '#f8f9fa',
                 borderRight: '1px solid #e2e5f1',
                 display: 'flex',
                 flexDirection: 'column',
@@ -865,35 +888,88 @@ export default function BoothReport() {
                 padding: '24px',
                 minHeight: '400px'
               }}>
-                {verifyingReport.tally_sheet_url ? (
-                  isPdf(verifyingReport.tally_sheet_url) ? (
-                    <iframe src={verifyingReport.tally_sheet_url} title="Tally Sheet" style={{ width: '100%', height: '65vh', border: 'none' }} />
-                  ) : (
-                    <img src={verifyingReport.tally_sheet_url} alt="Tally Sheet" style={{ maxWidth: '100%', maxHeight: '65vh', objectFit: 'contain' }} />
-                  )
-                ) : (
-                  <div style={{ textAlign: 'center', color: '#64748b' }}>
-                    <div style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: '50%',
-                      background: '#e2e8f0',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: 12,
-                      color: '#94a3b8'
-                    }}>
-                      <IconImage width={28} height={28} />
-                    </div>
-                    <h4 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 600, color: '#334155' }}>
-                      No media uploaded yet
-                    </h4>
-                    <p style={{ margin: 0, fontSize: 13, color: '#64748b', maxWidth: 260 }}>
-                      Mobile app has not synced tally documents for this booth. You can still enter verified counts manually on the right.
-                    </p>
+                {(verifyingReport.tally_sheet_url && verifyingReport.tally_sheet_url_2) && (
+                  <div style={{
+                    display: 'flex',
+                    gap: '8px',
+                    marginBottom: '16px',
+                    alignSelf: 'center',
+                    background: 'rgba(255, 255, 255, 0.12)',
+                    padding: '4px',
+                    borderRadius: '8px'
+                  }}>
+                    <button
+                      type="button"
+                      style={{
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        backgroundColor: verifyPreviewTab === 1 ? '#2563eb' : 'transparent',
+                        color: verifyPreviewTab === 1 ? '#ffffff' : '#94a3b8',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onClick={() => setVerifyPreviewTab(1)}
+                    >
+                      Photo 1 (EC8A Front)
+                    </button>
+                    <button
+                      type="button"
+                      style={{
+                        padding: '6px 14px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        backgroundColor: verifyPreviewTab === 2 ? '#2563eb' : 'transparent',
+                        color: verifyPreviewTab === 2 ? '#ffffff' : '#94a3b8',
+                        transition: 'all 0.15s ease'
+                      }}
+                      onClick={() => setVerifyPreviewTab(2)}
+                    >
+                      Photo 2 (Supplementary)
+                    </button>
                   </div>
                 )}
+
+                {(() => {
+                  const activeUrl = verifyPreviewTab === 2
+                    ? (verifyingReport.tally_sheet_url_2 || verifyingReport.tally_sheet_url)
+                    : (verifyingReport.tally_sheet_url || verifyingReport.tally_sheet_url_2);
+
+                  return activeUrl ? (
+                    isPdf(activeUrl) ? (
+                      <iframe src={activeUrl} title="Tally Sheet" style={{ width: '100%', height: '60vh', border: 'none', borderRadius: 6 }} />
+                    ) : (
+                      <img src={activeUrl} alt="Tally Sheet" style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain', borderRadius: 6 }} />
+                    )
+                  ) : (
+                    <div style={{ textAlign: 'center', color: '#64748b' }}>
+                      <div style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: '50%',
+                        background: '#e2e8f0',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 12,
+                        color: '#94a3b8'
+                      }}>
+                        <IconImage width={28} height={28} />
+                      </div>
+                      <h4 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 600, color: '#334155' }}>
+                        No media uploaded yet
+                      </h4>
+                      <p style={{ margin: 0, fontSize: 13, color: '#64748b', maxWidth: 260 }}>
+                        Mobile app has not synced tally documents for this booth. You can still enter verified counts manually on the right.
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* RIGHT SIDE: Form Inputs */}
