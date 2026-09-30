@@ -522,7 +522,7 @@ export default function BoothReport() {
                       {sub.created_at ? (
                         new Date(sub.created_at).toLocaleString()
                       ) : (
-                        <span className="muted" style={{ fontSize: 12 }}>Awaiting App Sync</span>
+                        <span className="muted" style={{ fontSize: 12 }}></span>
                       )}
                     </td>
                     <td>
@@ -538,14 +538,14 @@ export default function BoothReport() {
                           <IconFileText />
                         </button>
                       ) : (
-                        <span className="muted" style={{ fontSize: 12 }}>Awaiting App Sync</span>
+                        <span className="muted" style={{ fontSize: 12 }}></span>
                       )}
                     </td>
                     <td>
                       {(() => {
                         const { photo1, photo2 } = parseTallySheetUrls(sub.tally_sheet_url, sub.tally_sheet_url_2);
                         if (!photo1 && !photo2 && !sub.video_url) {
-                          return <span className="muted" style={{ fontSize: 12 }}>Awaiting App Sync</span>;
+                          return <span className="muted" style={{ fontSize: 12 }}></span>;
                         }
                         return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -554,7 +554,7 @@ export default function BoothReport() {
                                 type="button"
                                 className="btn-icon"
                                 style={actionIconStyle('primary')}
-                                title="View Photo 1 (EC8A Front)"
+                                title="View Photo 1 "
                                 aria-label="View Photo 1"
                                 onClick={() => setSelectedImage({
                                   url: photo1,
@@ -575,7 +575,7 @@ export default function BoothReport() {
                                   color: '#16a34a',
                                   borderColor: '#bbf7d0'
                                 }}
-                                title="View Photo 2 (EC8A Back / Supplementary)"
+                                title="View Photo 2"
                                 aria-label="View Photo 2"
                                 onClick={() => setSelectedImage({
                                   url: photo2,
@@ -854,7 +854,7 @@ export default function BoothReport() {
           >
             <div className="modal-header">
               <div>
-                <h3 style={{ margin: 0, fontSize: 16 }}>Tally Video — {selectedVideo.booth}</h3>
+                <h3 style={{ margin: 0, fontSize: 16 }}>Video — {selectedVideo.booth}</h3>
                 <span className="muted" style={{ fontSize: 12 }}>Operator: {selectedVideo.operator}</span>
               </div>
               <button className="modal-close" onClick={() => setSelectedVideo(null)}>&times;</button>
@@ -950,7 +950,7 @@ export default function BoothReport() {
                           }}
                           onClick={() => setVerifyPreviewTab(1)}
                         >
-                          Photo 1 (EC8A Front)
+                          Photo 1 
                         </button>
                         <button
                           type="button"
@@ -967,7 +967,7 @@ export default function BoothReport() {
                           }}
                           onClick={() => setVerifyPreviewTab(2)}
                         >
-                          Photo 2 (Supplementary)
+                          Photo 2 
                         </button>
                       </div>
                     )}
