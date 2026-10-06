@@ -569,12 +569,7 @@ export default function BoothReport() {
                               <button
                                 type="button"
                                 className="btn-icon"
-                                style={{
-                                  ...actionIconStyle('primary'),
-                                  backgroundColor: '#f0fdf4',
-                                  color: '#16a34a',
-                                  borderColor: '#bbf7d0'
-                                }}
+                                style={actionIconStyle('primary')}
                                 title="View Photo 2"
                                 aria-label="View Photo 2"
                                 onClick={() => setSelectedImage({
