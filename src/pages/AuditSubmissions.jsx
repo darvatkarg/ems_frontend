@@ -485,7 +485,7 @@ export default function BoothReport() {
                 <th>Booth Officer</th>
                 <th>Booth Code &amp; Name</th>
                 <th>Time Submitted</th>
-                <th>Reports</th>
+                {/* <th>Reports</th> */}
                 <th>Media Attachments</th>
                 <th>Moderator Count</th>
               </tr>
@@ -497,14 +497,14 @@ export default function BoothReport() {
                     <td><div className="skeleton-box" style={{ width: '60%', height: 16 }} /></td>
                     <td><div className="skeleton-box" style={{ width: '50%', height: 16 }} /></td>
                     <td><div className="skeleton-box" style={{ width: '40%', height: 16 }} /></td>
-                    <td><div className="skeleton-box" style={{ width: 32, height: 32, borderRadius: 6 }} /></td>
+                    {/* <td><div className="skeleton-box" style={{ width: 32, height: 32, borderRadius: 6 }} /></td> */}
                     <td><div className="skeleton-box" style={{ width: 32, height: 32, borderRadius: 6 }} /></td>
                     <td><div className="skeleton-box" style={{ width: 32, height: 32, borderRadius: 6 }} /></td>
                   </tr>
                 ))
               ) : submissions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="empty-state">
+                  <td colSpan={5 /* 6 */} className="empty-state">
                     {filterWard
                       ? (searchTerm ? 'No booths match the search in this ward.' : 'No booths found in this ward.')
                       : 'Please select a State, LGA, and Ward to view booth reports.'}
@@ -525,7 +525,7 @@ export default function BoothReport() {
                         <span className="muted" style={{ fontSize: 12 }}></span>
                       )}
                     </td>
-                    <td>
+                    {/* <td>
                       {sub.id && sub.created_at ? (
                         <button
                           type="button"
@@ -540,7 +540,7 @@ export default function BoothReport() {
                       ) : (
                         <span className="muted" style={{ fontSize: 12 }}></span>
                       )}
-                    </td>
+                    </td> */}
                     <td>
                       {(() => {
                         const { photo1, photo2 } = parseTallySheetUrls(sub.tally_sheet_url, sub.tally_sheet_url_2);
