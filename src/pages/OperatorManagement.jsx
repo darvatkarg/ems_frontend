@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { exportToExcel } from '../utils/exportImportUtils';
 import { getProfilePictureUrl } from '../components/ProfileModal';
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 10;
 
 const SearchIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -106,7 +106,7 @@ const IconChevron = (props) => (
   </svg>
 );
 
-function SearchableSelect({ value, onChange, options = [], placeholder = '' }) {
+function SearchableSelect({ value, onChange, options = [], placeholder = '', disabled = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const wrapRef = useRef(null);
@@ -122,47 +122,50 @@ function SearchableSelect({ value, onChange, options = [], placeholder = '' }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selected = options.find(o => o.value === value);
+  const selected = options.find(o => String(o.value) === String(value));
   const filtered = query
     ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
     : options;
 
   const selectOption = (opt) => {
+    if (disabled) return;
     onChange(opt.value);
     setQuery('');
     setOpen(false);
   };
 
   return (
-    <div className="combobox" ref={wrapRef}>
+    <div className={`combobox ${disabled ? 'disabled' : ''}`} ref={wrapRef}>
       <input
         type="text"
         className="form-control combobox-input"
-        value={open ? query : (selected ? selected.label : '')}
+        disabled={disabled}
+        value={disabled ? '' : (open ? query : (selected ? selected.label : ''))}
         placeholder={placeholder}
         autoComplete="off"
-        onFocus={() => { setOpen(true); setQuery(''); }}
-        onChange={e => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={() => { if (!disabled) { setOpen(true); setQuery(''); } }}
+        onChange={e => { if (!disabled) { setQuery(e.target.value); setOpen(true); } }}
         onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setQuery(''); } }}
       />
       <button
         type="button"
         className="combobox-toggle"
+        disabled={disabled}
         tabIndex={-1}
-        onClick={() => setOpen(o => !o)}
+        onClick={() => { if (!disabled) setOpen(o => !o); }}
         aria-label="Toggle options"
       >
         <IconChevron className={open ? 'combobox-chevron open' : 'combobox-chevron'} />
       </button>
 
-      {open && (
+      {!disabled && open && (
         <div className="combobox-panel">
           {filtered.length > 0 ? (
             filtered.map(opt => (
               <button
                 type="button"
                 key={opt.value || 'none'}
-                className={`combobox-option ${opt.value === value ? 'selected' : ''}`}
+                className={`combobox-option ${String(opt.value) === String(value) ? 'selected' : ''}`}
                 onClick={() => selectOption(opt)}
               >
                 {opt.label}
@@ -189,8 +192,12 @@ const SORT_OPTIONS = [
 export default function OperatorManagement() {
   const [operators, setOperators] = useState([]);
   const [booths, setBooths] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [formData, setFormData] = useState({ full_name: '', username: '', password: '', assigned_booth_id: '' });
   const [editingId, setEditingId] = useState(null);
+  const [modalState, setModalState] = useState('');
+  const [modalLga, setModalLga] = useState('');
+  const [modalWard, setModalWard] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -233,7 +240,8 @@ export default function OperatorManagement() {
 
       const locRes = await apiCall('/locations/all');
       if (locRes.success) {
-        const validBooths = locRes.locations.filter(l => l.booth_id);
+        setLocations(locRes.locations || []);
+        const validBooths = (locRes.locations || []).filter(l => l.booth_id);
         setBooths(validBooths);
       }
     } catch (err) {
@@ -251,6 +259,9 @@ export default function OperatorManagement() {
 
   const resetForm = () => {
     setEditingId(null);
+    setModalState('');
+    setModalLga('');
+    setModalWard('');
     setFormData({ full_name: '', username: '', password: '', assigned_booth_id: '', profile_picture: null });
   };
 
@@ -284,6 +295,15 @@ export default function OperatorManagement() {
 
   const handleEdit = (op) => {
     setEditingId(op.id);
+    const assignedBooth = booths.find(b => String(b.booth_id) === String(op.assigned_booth_id));
+    const bState = assignedBooth?.state_name || op.state_name || '';
+    const bLga = assignedBooth?.lga_name || op.lga_name || '';
+    const bWard = assignedBooth?.ward_name || op.ward_name || '';
+
+    setModalState(bState);
+    setModalLga(bLga);
+    setModalWard(bWard);
+
     setFormData({
       full_name: op.full_name,
       username: op.username,
@@ -327,6 +347,80 @@ export default function OperatorManagement() {
   const wardOptions = [...new Set(
     booths.filter(b => b.state_name === filterState && b.lga_name === filterLga).map(b => b.ward_name).filter(Boolean)
   )].sort();
+
+  // Cascading options and handlers for the Create/Edit modal
+  const locationSource = locations.length > 0 ? locations : booths;
+
+  const modalStateOptions = [...new Set(locationSource.map(l => l.state_name).filter(Boolean))].sort();
+
+  const modalLgaOptions = modalState
+    ? [...new Set(
+        locationSource
+          .filter(l => l.state_name === modalState)
+          .map(l => l.lga_name)
+          .filter(Boolean)
+      )].sort()
+    : [];
+
+  const modalWardOptions = modalState && modalLga
+    ? [...new Set(
+        locationSource
+          .filter(l => l.state_name === modalState && l.lga_name === modalLga)
+          .map(l => l.ward_name)
+          .filter(Boolean)
+      )].sort()
+    : [];
+
+  const modalBoothList = modalWard
+    ? booths.filter(b =>
+        (!modalState || b.state_name === modalState) &&
+        (!modalLga || b.lga_name === modalLga) &&
+        b.ward_name === modalWard
+      )
+    : [];
+
+  const sortedModalBoothList = [...modalBoothList].sort((a, b) => {
+    const codeA = String(a.unique_booth_code || '');
+    const codeB = String(b.unique_booth_code || '');
+    const codeComparison = codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+    if (codeComparison !== 0) return codeComparison;
+    return String(a.booth_name || '').localeCompare(String(b.booth_name || ''), undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+  const currentAssignedInList = sortedModalBoothList.some(b => String(b.booth_id) === String(formData.assigned_booth_id));
+  const assignedBoothObj = !currentAssignedInList && formData.assigned_booth_id
+    ? booths.find(b => String(b.booth_id) === String(formData.assigned_booth_id))
+    : null;
+
+  const modalBoothOptions = [
+    { value: '', label: '-- No assigned booth (operator picks dynamic) --' },
+    ...(assignedBoothObj ? [{
+      value: assignedBoothObj.booth_id,
+      label: `${assignedBoothObj.unique_booth_code} — ${assignedBoothObj.booth_name} (${assignedBoothObj.ward_name})`,
+    }] : []),
+    ...sortedModalBoothList.map(b => ({
+      value: b.booth_id,
+      label: `${b.unique_booth_code} — ${b.booth_name} (${b.ward_name})`,
+    })),
+  ];
+
+  const handleModalStateChange = (selectedState) => {
+    setModalState(selectedState);
+    setModalLga('');
+    setModalWard('');
+    setFormData(prev => ({ ...prev, assigned_booth_id: '' }));
+  };
+
+  const handleModalLgaChange = (selectedLga) => {
+    setModalLga(selectedLga);
+    setModalWard('');
+    setFormData(prev => ({ ...prev, assigned_booth_id: '' }));
+  };
+
+  const handleModalWardChange = (selectedWard) => {
+    setModalWard(selectedWard);
+    setFormData(prev => ({ ...prev, assigned_booth_id: '' }));
+  };
 
   const clearFilters = () => {
     setFilterState('');
@@ -687,7 +781,7 @@ export default function OperatorManagement() {
       {/* FEATURE: Floating Operator Create/Edit Modal */}
       {isCreateModalOpen && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="admin-edit-modal-box" onClick={e => e.stopPropagation()}>
+          <div className="admin-edit-modal-box operator-edit-modal-box" onClick={e => e.stopPropagation()}>
             <div className="admin-edit-modal-header">
               <div>
                 <h3 className="admin-edit-modal-title">{editingId ? 'Edit Booth Officer' : 'Register Booth Officer'}</h3>
@@ -748,20 +842,65 @@ export default function OperatorManagement() {
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                   />
                 </div>
-                <div className="form-group admin-modal-lga-group">
-                  <label className="form-label">Assign Polling Unit</label>
-                  <SearchableSelect
-                    placeholder="Search booth by code, name, or ward…"
-                    value={formData.assigned_booth_id}
-                    onChange={val => setFormData({ ...formData, assigned_booth_id: val })}
-                    options={[
-                      { value: '', label: '-- No assigned booth (operator picks dynamic) --' },
-                      ...booths.map(b => ({
-                        value: b.booth_id,
-                        label: `${b.unique_booth_code} — ${b.booth_name} (${b.ward_name})`,
-                      })),
-                    ]}
-                  />
+
+                {/* Row 1: State and LGA dropdowns side-by-side */}
+                <div className="form-row">
+                  <div className="form-group admin-modal-form-group operator-cascading-field">
+                    <label className="form-label">State</label>
+                    <CustomSelect
+                      value={modalState}
+                      isClearable={true}
+                      placeholder="-- Select State --"
+                      options={modalStateOptions}
+                      onChange={e => handleModalStateChange(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group admin-modal-form-group operator-cascading-field">
+                    <label className="form-label">LGA</label>
+                    <CustomSelect
+                      disabled={!modalState}
+                      isClearable={true}
+                      value={modalLga}
+                      placeholder={modalState ? '-- Select LGA --' : '-- First Select State --'}
+                      options={modalLgaOptions}
+                      onChange={e => handleModalLgaChange(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: Ward and Assign Polling Unit dropdowns side-by-side */}
+                <div className="form-row">
+                  <div className="form-group admin-modal-form-group operator-cascading-field">
+                    <label className="form-label">Ward</label>
+                    <CustomSelect
+                      disabled={!modalLga}
+                      isClearable={true}
+                      value={modalWard}
+                      placeholder={modalLga ? '-- Select Ward --' : '-- First Select LGA --'}
+                      options={modalWardOptions}
+                      onChange={e => handleModalWardChange(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group admin-modal-lga-group operator-cascading-field">
+                    <label className="form-label">Assign Polling Unit</label>
+                    <SearchableSelect
+                      disabled={!modalWard}
+                      placeholder={
+                        !modalState
+                          ? '-- First Select State --'
+                          : !modalLga
+                          ? '-- First Select LGA --'
+                          : !modalWard
+                          ? '-- First Select Ward --'
+                          : 'Search booth by code, name, or ward…'
+                      }
+                      value={formData.assigned_booth_id}
+                      onChange={val => setFormData({ ...formData, assigned_booth_id: val })}
+                      options={modalBoothOptions}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="admin-edit-modal-footer">
