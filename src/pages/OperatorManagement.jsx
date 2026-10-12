@@ -53,6 +53,20 @@ const PlusIcon = () => (
   </svg>
 );
 
+const EyeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+);
+
 const actionIconStyle = (variant) => ({
   display: 'inline-flex',
   alignItems: 'center',
@@ -200,6 +214,7 @@ export default function OperatorManagement() {
   const [modalWard, setModalWard] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(true);
 
@@ -262,6 +277,7 @@ export default function OperatorManagement() {
     setModalState('');
     setModalLga('');
     setModalWard('');
+    setShowPassword(false);
     setFormData({ full_name: '', username: '', password: '', assigned_booth_id: '', profile_picture: null });
   };
 
@@ -272,13 +288,40 @@ export default function OperatorManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const trimmedUsername = (formData.username || '').trim();
+    const trimmedPassword = (formData.password || '').trim();
+    const trimmedFullName = (formData.full_name || '').trim();
+
+    if (!trimmedFullName) {
+      toast.error('Full Name is required.');
+      return;
+    }
+
+    if (!trimmedUsername) {
+      toast.error('App Username is required.');
+      return;
+    }
+
+    if (!editingId && !trimmedPassword) {
+      toast.error('Password is required.');
+      return;
+    }
+
     setSubmitting(true);
+
+    const payload = {
+      ...formData,
+      full_name: trimmedFullName,
+      username: trimmedUsername,
+      password: trimmedPassword,
+    };
 
     let res;
     if (editingId) {
-      res = await apiCall(`/operators/${editingId}`, { method: 'PUT', body: JSON.stringify(formData) });
+      res = await apiCall(`/operators/${editingId}`, { method: 'PUT', body: JSON.stringify(payload) });
     } else {
-      res = await apiCall('/operators/add', { method: 'POST', body: JSON.stringify(formData) });
+      res = await apiCall('/operators/add', { method: 'POST', body: JSON.stringify(payload) });
     }
 
     setSubmitting(false);
@@ -303,6 +346,7 @@ export default function OperatorManagement() {
     setModalState(bState);
     setModalLga(bLga);
     setModalWard(bWard);
+    setShowPassword(false);
 
     setFormData({
       full_name: op.full_name,
@@ -396,11 +440,15 @@ export default function OperatorManagement() {
     { value: '', label: '-- No assigned booth (operator picks dynamic) --' },
     ...(assignedBoothObj ? [{
       value: assignedBoothObj.booth_id,
-      label: `${assignedBoothObj.unique_booth_code} — ${assignedBoothObj.booth_name} (${assignedBoothObj.ward_name})`,
+      label: assignedBoothObj.unique_booth_code
+        ? `${assignedBoothObj.unique_booth_code} — ${assignedBoothObj.booth_name}`
+        : assignedBoothObj.booth_name,
     }] : []),
     ...sortedModalBoothList.map(b => ({
       value: b.booth_id,
-      label: `${b.unique_booth_code} — ${b.booth_name} (${b.ward_name})`,
+      label: b.unique_booth_code
+        ? `${b.unique_booth_code} — ${b.booth_name}`
+        : b.booth_name,
     })),
   ];
 
@@ -830,27 +878,44 @@ export default function OperatorManagement() {
                     type="text" required className="form-control"
                     value={formData.username}
                     onChange={e => setFormData({ ...formData, username: e.target.value })}
+                    onBlur={e => setFormData(prev => ({ ...prev, username: (prev.username || '').trim() }))}
                   />
                 </div>
                 <div className="form-group admin-modal-form-group">
                   <label className="form-label">
                     {editingId ? 'Password (leave blank to keep current)' : 'Password'}
                   </label>
-                  <input
-                    type="password" required={!editingId} className="form-control"
-                    value={formData.password}
-                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                  />
+                  <div className="password-input-wrapper">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required={!editingId}
+                      className="form-control"
+                      placeholder={editingId ? 'Leave blank to keep current' : 'Enter password'}
+                      value={formData.password}
+                      onChange={e => setFormData({ ...formData, password: e.target.value })}
+                      onBlur={e => setFormData(prev => ({ ...prev, password: (prev.password || '').trim() }))}
+                    />
+                    <button
+                      type="button"
+                      className={`password-toggle-btn ${showPassword ? 'active' : ''}`}
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex="-1"
+                      title={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Row 1: State and LGA dropdowns side-by-side */}
-                <div className="form-row">
+                <div className="form-row" style={{ zIndex: 10 }}>
                   <div className="form-group admin-modal-form-group operator-cascading-field">
                     <label className="form-label">State</label>
                     <CustomSelect
                       value={modalState}
                       isClearable={true}
-                      placeholder="-- Select State --"
+                      placeholder="Select State"
                       options={modalStateOptions}
                       onChange={e => handleModalStateChange(e.target.value)}
                     />
@@ -862,45 +927,44 @@ export default function OperatorManagement() {
                       disabled={!modalState}
                       isClearable={true}
                       value={modalLga}
-                      placeholder={modalState ? '-- Select LGA --' : '-- First Select State --'}
+                      placeholder={modalState ? 'Select LGA' : 'Select State First'}
                       options={modalLgaOptions}
                       onChange={e => handleModalLgaChange(e.target.value)}
                     />
                   </div>
                 </div>
 
-                {/* Row 2: Ward and Assign Polling Unit dropdowns side-by-side */}
-                <div className="form-row">
-                  <div className="form-group admin-modal-form-group operator-cascading-field">
-                    <label className="form-label">Ward</label>
-                    <CustomSelect
-                      disabled={!modalLga}
-                      isClearable={true}
-                      value={modalWard}
-                      placeholder={modalLga ? '-- Select Ward --' : '-- First Select LGA --'}
-                      options={modalWardOptions}
-                      onChange={e => handleModalWardChange(e.target.value)}
-                    />
-                  </div>
+                {/* Ward dropdown (stacked one by one) */}
+                <div className="form-group admin-modal-form-group operator-cascading-field" style={{ zIndex: 9 }}>
+                  <label className="form-label">Ward</label>
+                  <CustomSelect
+                    disabled={!modalLga}
+                    isClearable={true}
+                    value={modalWard}
+                    placeholder={modalLga ? 'Select Ward' : 'Select LGA First'}
+                    options={modalWardOptions}
+                    onChange={e => handleModalWardChange(e.target.value)}
+                  />
+                </div>
 
-                  <div className="form-group admin-modal-lga-group operator-cascading-field">
-                    <label className="form-label">Assign Polling Unit</label>
-                    <SearchableSelect
-                      disabled={!modalWard}
-                      placeholder={
-                        !modalState
-                          ? '-- First Select State --'
-                          : !modalLga
-                          ? '-- First Select LGA --'
-                          : !modalWard
-                          ? '-- First Select Ward --'
-                          : 'Search booth by code, name, or ward…'
-                      }
-                      value={formData.assigned_booth_id}
-                      onChange={val => setFormData({ ...formData, assigned_booth_id: val })}
-                      options={modalBoothOptions}
-                    />
-                  </div>
+                {/* Assign Polling Unit dropdown (stacked one by one) */}
+                <div className="form-group admin-modal-form-group admin-modal-lga-group operator-cascading-field" style={{ zIndex: 8 }}>
+                  <label className="form-label">Assign Polling Unit</label>
+                  <SearchableSelect
+                    disabled={!modalWard}
+                    placeholder={
+                      !modalState
+                        ? 'Select State First'
+                        : !modalLga
+                        ? 'Select LGA First'
+                        : !modalWard
+                        ? 'Select Ward First'
+                        : 'Search booth by code or name…'
+                    }
+                    value={formData.assigned_booth_id}
+                    onChange={val => setFormData({ ...formData, assigned_booth_id: val })}
+                    options={modalBoothOptions}
+                  />
                 </div>
               </div>
               <div className="admin-edit-modal-footer">
