@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 // import { exportToCSV, exportToExcel } from '../utils/exportImportUtils';
 import { exportToExcel } from '../utils/exportImportUtils';
 import { getProfilePictureUrl } from '../components/ProfileModal';
+import { generateRandomPassword } from '../utils/passwordUtils';
 
 const PAGE_SIZE = 10;
 
@@ -284,6 +285,16 @@ export default function OperatorManagement() {
   const handleCloseModal = () => {
     resetForm();
     setIsCreateModalOpen(false);
+  };
+
+  // Auto-generate secure 6-character password (uppercase, lowercase, digit)
+  const handleGeneratePassword = () => {
+    const newPassword = generateRandomPassword();
+    setFormData(prev => ({
+      ...prev,
+      password: newPassword
+    }));
+    setShowPassword(true);
   };
 
   const handleSubmit = async (e) => {
@@ -885,27 +896,41 @@ export default function OperatorManagement() {
                   <label className="form-label">
                     {editingId ? 'Password (leave blank to keep current)' : 'Password'}
                   </label>
-                  <div className="password-input-wrapper">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required={!editingId}
-                      className="form-control"
-                      placeholder={editingId ? 'Leave blank to keep current' : 'Enter password'}
-                      value={formData.password}
-                      onChange={e => setFormData({ ...formData, password: e.target.value })}
-                      onBlur={e => setFormData(prev => ({ ...prev, password: (prev.password || '').trim() }))}
-                    />
+                  <div className="admin-password-group">
+                    <div className="password-input-wrapper" style={{ flex: 1 }}>
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required={!editingId}
+                        className="form-control admin-password-input"
+                        placeholder={editingId ? 'Leave blank to keep current' : 'Enter password'}
+                        value={formData.password}
+                        onChange={e => setFormData({ ...formData, password: e.target.value })}
+                        onBlur={e => setFormData(prev => ({ ...prev, password: (prev.password || '').trim() }))}
+                      />
+                      <button
+                        type="button"
+                        className={`password-toggle-btn ${showPassword ? 'active' : ''}`}
+                        onClick={() => setShowPassword(!showPassword)}
+                        tabIndex="-1"
+                        title={showPassword ? "Hide password" : "Show password"}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                    </div>
                     <button
                       type="button"
-                      className={`password-toggle-btn ${showPassword ? 'active' : ''}`}
-                      onClick={() => setShowPassword(!showPassword)}
-                      tabIndex="-1"
-                      title={showPassword ? "Hide password" : "Show password"}
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="btn btn-secondary admin-btn-generate"
+                      onClick={handleGeneratePassword}
                     >
-                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      Auto-Generate
                     </button>
                   </div>
+                  {editingId && (
+                    <small className="admin-field-hint">
+                      Leave blank to keep the current password.
+                    </small>
+                  )}
                 </div>
 
                 {/* Row 1: State and LGA dropdowns side-by-side */}

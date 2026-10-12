@@ -4,6 +4,7 @@ import CustomSelect from '../components/CustomSelect';
 import { toast } from 'react-hot-toast';
 // import { exportToCSV, exportToExcel } from '../utils/exportImportUtils';
 import { exportToExcel } from '../utils/exportImportUtils';
+import { generateRandomPassword } from '../utils/passwordUtils';
 
 const EditIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -204,27 +205,23 @@ export default function AdminManagement({ currentAdminRole }) {
     loadAllData();
   }, []);
 
-  // FEATURE: Auto-generate password from first name and last 3 digits of phone number
+  // Auto-generate secure 6-character password (uppercase, lowercase, digit)
   const generatePassword = () => {
-    const firstName = (formData.full_name || '').trim().split(' ')[0] || '';
-    const cleanContact = (formData.contact_number || '').replace(/\D/g, '');
-    const last3Digits = cleanContact.slice(-3);
+    const newPassword = generateRandomPassword();
     setFormData(prev => ({
       ...prev,
-      password: `${firstName}${last3Digits}`
+      password: newPassword
     }));
     setShowCreatePassword(true);
   };
 
-  // FEATURE: Auto-generate password in edit user modal from first name and last 3 digits of contact
+  // Auto-generate secure 6-character password in edit user modal
   const generateEditPassword = () => {
     if (!editingUser) return;
-    const firstName = (editingUser.full_name || '').trim().split(' ')[0] || '';
-    const cleanContact = (editingUser.contact_number || '').replace(/\D/g, '');
-    const last3Digits = cleanContact.slice(-3);
+    const newPassword = generateRandomPassword();
     setEditingUser(prev => ({
       ...prev,
-      password: `${firstName}${last3Digits}`
+      password: newPassword
     }));
     setShowEditPassword(true);
   };
